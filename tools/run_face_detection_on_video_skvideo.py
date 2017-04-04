@@ -10,6 +10,7 @@ import scipy.io as sio
 import caffe, os, sys, cv2
 import argparse
 import sys
+import skvideo.io
 
 NETS = {'vgg16': ('VGG16',
           'output/faster_rcnn_end2end/train/vgg16_faster_rcnn_iter_80000.caffemodel')}
@@ -76,57 +77,52 @@ if __name__ == '__main__':
   if not os.path.exists(args.video_path):
     print 'Video does not exist.'
 
-  video = cv2.VideoCapture(args.video_path)
+  video = skvideo.io.vreader(args.video_path)
+  metadata = skvideo.io.ffprobe(args.video_path)
 
   # Get width, height
-  #width = int(video.get(cv2.CV_CAP_PROP_FRAME_WIDTH))   # float
-  #height = int(video.get(cv2.CV_CAP_PROP_FRAME_HEIGHT)) # float
-  width = int(video.get(3))
-  height = int(video.get(4))
+  # width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))   # float
+  # height = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)) # float
+  width = 1920
+  height = 1080
 
   # Define the codec and create VideoWriter object
-  # TODO: The videos I am using are 30fps, but you should programmatically get this.
-  fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-  out = cv2.VideoWriter('output/video/output-%s.avi' % args.output_string,fourcc, 30.0, (width, height))
+  out = skvideo.io.FFmpegWriter('output/video/output-%s.avi' % args.output_string)
 
   n_frame = 1
-  # TODO: add time function per frame.
-  while (n_frame < 3000):
-      ret, frame = video.read()
+  max_frames = 3000
 
-      if ret == True:
-          # frame is BGR cv2 image.
-          # # Detect all object classes and regress object bounds
-          scores, boxes = im_detect(net, frame)
-
-          cls_ind = 1
-          cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-          cls_scores = scores[:, cls_ind]
-          dets = np.hstack((cls_boxes,
-                    cls_scores[:, np.newaxis])).astype(np.float32)
-          keep = nms(dets, NMS_THRESH)
-          dets = dets[keep, :]
-
-          keep = np.where(dets[:, 4] > CONF_THRESH)
-          dets = dets[keep]
-
-          # dets are the upper left and lower right coordinates of bbox
-          # dets[:, 0] = x_ul, dets[:, 1] = y_ul
-          # dets[:, 2] = x_lr, dets[:, 3] = y_lr
-
-          dets[:, 2] = dets[:, 2]
-          dets[:, 3] = dets[:, 3]
-          if (dets.shape[0] != 0):
-              fid.write(str(n_frame) + ' ')
-              for j in xrange(dets.shape[0]):
-                fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
-              # Draw bbox
-              cv2.rectangle(frame,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
-          out.write(frame)
-
-          n_frame += 1
-      else:
+  for frame in video:
+      if n_frame > max_frames:
           break
+      frame_original = frame
+      frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+      # frame is BGR cv2 image.
+      # # Detect all object classes and regress object bounds
+      scores, boxes = im_detect(net, frame)
+
+      cls_ind = 1
+      cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
+      cls_scores = scores[:, cls_ind]
+      dets = np.hstack((cls_boxes,
+      cls_scores[:, np.newaxis])).astype(np.float32)
+      keep = nms(dets, NMS_THRESH)
+      dets = dets[keep, :]
+
+      keep = np.where(dets[:, 4] > CONF_THRESH)
+      dets = dets[keep]
+
+      dets[:, 2] = dets[:, 2]
+      dets[:, 3] = dets[:, 3]
+      if (dets.shape[0] != 0):
+          fid.write(str(n_frame) + ' ')
+          for j in xrange(dets.shape[0]):
+              fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+              # Draw bbox
+          cv2.rectangle(frame_original,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
+      out.writeFrame(frame_original)
+      n_frame += 1
 
   print 'Done with detection.'
   fid.close()
