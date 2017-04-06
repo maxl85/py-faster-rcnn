@@ -79,14 +79,12 @@ if __name__ == '__main__':
   video = cv2.VideoCapture(args.video_path)
 
   # Get width, height
-  #width = int(video.get(cv2.CV_CAP_PROP_FRAME_WIDTH))   # float
-  #height = int(video.get(cv2.CV_CAP_PROP_FRAME_HEIGHT)) # float
-  width = int(video.get(3))
-  height = int(video.get(4))
+  width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))   # float
+  height = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)) # float
 
   # Define the codec and create VideoWriter object
   # TODO: The videos I am using are 30fps, but you should programmatically get this.
-  fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+  fourcc = cv2.cv.CV_FOURCC(*'MJPG')
   out = cv2.VideoWriter('output/video/output-%s.avi' % args.output_string,fourcc, 30.0, (width, height))
 
   n_frame = 1

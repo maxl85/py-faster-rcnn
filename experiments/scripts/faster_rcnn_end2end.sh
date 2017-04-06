@@ -38,6 +38,18 @@ case $DATASET in
     PT_DIR="coco"
     ITERS=490000
     ;;
+  wider)
+    TRAIN_IMDB="wider_train"
+    TEST_IMDB="wider_test"
+    PT_DIR="face"
+    ITERS=80000
+    ;;
+  ijba)
+    TRAIN_IMDB="ijba_train_split_1"
+    TEST_IMDB="ijba_test_split_1"
+    PT_DIR="face"
+    ITERS=100000
+    ;;
   *)
     echo "No dataset given"
     exit
@@ -60,9 +72,9 @@ set +x
 NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
 set -x
 
-time ./tools/test_net.py --gpu ${GPU_ID} \
-  --def models/${PT_DIR}/${NET}/faster_rcnn_end2end/test.prototxt \
-  --net ${NET_FINAL} \
-  --imdb ${TEST_IMDB} \
-  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
-  ${EXTRA_ARGS}
+# time ./tools/test_net.py --gpu ${GPU_ID} \
+#   --def models/${PT_DIR}/${NET}/faster_rcnn_end2end/test.prototxt \
+#   --net ${NET_FINAL} \
+#   --imdb ${TEST_IMDB} \
+#   --cfg experiments/cfgs/faster_rcnn_end2end.yml \
+#   ${EXTRA_ARGS}
