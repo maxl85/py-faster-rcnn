@@ -26,6 +26,7 @@ def parse_args():
             choices=NETS.keys(), default='vgg16')
   parser.add_argument('--video', dest='video_path', help='Path of video')
   parser.add_argument('--output_string', dest='output_string', help='String appended to output file')
+  parser.add_argument('--conf_thresh', dest='conf_thresh', help='Confidence threshold for detections, float between 0 and 1.', default=0.85, type=float)
 
   args = parser.parse_args()
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
   dets_file_name = os.path.join(out_dir, 'video-det-fold-%s.txt' % args.output_string)
   fid = open(dets_file_name, 'w')
 
-  CONF_THRESH = 0.85
+  CONF_THRESH = args.conf_thresh
   NMS_THRESH = 0.15
 
   print args.video_path
@@ -118,8 +119,8 @@ if __name__ == '__main__':
               fid.write(str(n_frame) + ' ')
               for j in xrange(dets.shape[0]):
                 fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
-              # Draw bbox
-              cv2.rectangle(frame,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
+                # Draw bbox
+                cv2.rectangle(frame,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
           out.write(frame)
 
           n_frame += 1
